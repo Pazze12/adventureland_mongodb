@@ -1688,6 +1688,10 @@ async function enforce_limitations() {
 	// Port from Python - multi-accounting detection
 	// Runs from check_servers cron
 	try {
+		// Self-hosted servers raise these in options, every local client shares 127.0.0.1 [16/10/26]
+		var ip_limit = options.ip_limit || 3;
+		var character_limit = options.character_limit || 3;
+		var merchant_ip_limit = Math.max(1, Math.floor(ip_limit / 3));
 		var servers = await get_servers();
 		var players = [],
 			ips = {},
@@ -1747,11 +1751,11 @@ async function enforce_limitations() {
 			for (var i = 0; i < server.players_list.length; i++) {
 				var player = server.players_list[i];
 				if (player.free) continue;
-				if (player.type === "merchant" && (mips[player.ip] > 1 || mowners[player.owner] > 1) && to_disconnect.indexOf(player.name) === -1) {
+				if (player.type === "merchant" && (mips[player.ip] > merchant_ip_limit || mowners[player.owner] > 1) && to_disconnect.indexOf(player.name) === -1) {
 					to_disconnect.push(player.name);
 					continue;
 				}
-				if (player.type !== "merchant" && (ips[player.ip] > 3 * (ipx[player.ip] || 1) || owners[player.owner] > 3) && to_disconnect.indexOf(player.name) === -1) {
+				if (player.type !== "merchant" && (ips[player.ip] > ip_limit * (ipx[player.ip] || 1) || owners[player.owner] > character_limit) && to_disconnect.indexOf(player.name) === -1) {
 					to_disconnect.push(player.name);
 					continue;
 				}
