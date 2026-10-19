@@ -13093,7 +13093,22 @@ function init_socket_io(socket_server, server_index) {
 			// send "requesting_ack", to verify someone is actually connected [03/08/16]
 			server_log("requested_ack" + JSON.stringify(data), 1);
 		});
-		socket.on("disconnect", function () {
+		socket.on("disconnect", function (reason) {
+			// eigener Server (#360): Grund jeder Trennung mit Name und Zeit loggen [19/10/26]
+			try {
+				var dc_player = players[socket.id];
+				server_log(
+					"DCREASON " +
+						new Date().toISOString() +
+						" " +
+						((dc_player && dc_player.name) || "-") +
+						" " +
+						socket.id +
+						" reason=" +
+						reason,
+					1,
+				);
+			} catch (e) {}
 			if (socket.login_attempt) cancel_character_login(socket.login_attempt);
 			//#IMPORTANT: disconnect exceptions are fatal [07/08/16]
 			// console.log("disconnect!");
