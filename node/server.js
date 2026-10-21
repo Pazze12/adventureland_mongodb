@@ -237,7 +237,7 @@ var B = {
 	pause_instances: true,
 	xy_backlog_limit: 262144, // 256KB queued on a socket: skip its entity updates until it drains, then resync - the queue used to grow unbounded [26/09/26]
 	global_drops: true,
-	drop_table_multiplier: 1, // 2 means drop tables extended by their original selves, not %'s multiplied
+	drop_table_multiplier: options.drop_multiplier || 1, // eigener Server: options.drop_multiplier [18/10/26] – 2 means drop tables extended by their original selves, not %'s multiplied
 };
 var CC = {
 	auth: 2,
@@ -357,9 +357,9 @@ var instances = {};
 // at first there were no instances, monsters were global
 // instances improve performance and allow things like dynamic events, dungeons
 
-var luckm = 1;
-var xpm = 1;
-var goldm = 1;
+var luckm = options.luck_multiplier || 1;
+var xpm = options.xp_multiplier || 1;
+var goldm = options.gold_multiplier || 1;
 var buym = 1;
 
 E.schedule.time_offset = TIMEO[region];
@@ -1684,7 +1684,7 @@ function calculate_player_stats(player) {
 		}
 	}
 
-	if (goldm != 1) {
+	if (goldm != 1 || luckm != 1 || xpm != 1) {
 		player.xgold += (goldm - 1) * 100.0;
 		player.xluck += (luckm - 1) * 100.0;
 		player.xxp += (xpm - 1) * 100.0;
@@ -2731,7 +2731,7 @@ function issue_monster_awards(monster) {
 			total_characters += 1;
 		}
 	}
-	B.drop_table_multiplier = parseInt(1 + Math.floor(total_characters / 10));
+	B.drop_table_multiplier = Math.max(options.drop_multiplier || 1, parseInt(1 + Math.floor(total_characters / 10)));
 	for (var name in monster.points) {
 		var current = players[name_to_id[name]];
 		var share = Math.pow(max(0, monster.points[name]), 0.65) / total;
@@ -2773,7 +2773,7 @@ function issue_monster_awards(monster) {
 			resend(current, "u+cid");
 		}
 	}
-	B.drop_table_multiplier = 1;
+	B.drop_table_multiplier = options.drop_multiplier || 1;
 }
 
 function issue_monster_award(monster, award) {
